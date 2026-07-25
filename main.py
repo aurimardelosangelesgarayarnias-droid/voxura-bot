@@ -1,8 +1,8 @@
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     Application,
-    CommandHandler,
     MessageHandler,
+    CommandHandler,
     ContextTypes,
     filters
 )
@@ -10,6 +10,7 @@ from telegram.ext import (
 import os
 
 from config import (
+    TOKEN,
     ANGIE_ID,
     ANGIE_USERNAME,
     CANAL_CAPACITACION,
@@ -18,324 +19,305 @@ from config import (
 
 from database import (
     crear_tabla,
-    crear_usuario,
-    actualizar_dato,
-    obtener_usuario
+    crear_chica,
+    actualizar,
+    obtener
 )
 
 from messages import (
     BIENVENIDA,
-    PEDIR_NOMBRE,
-    PEDIR_EDAD,
-    PEDIR_UBICACION,
-    PEDIR_MOTIVACION
+    NOMBRE,
+    EDAD,
+    PAIS,
+    MOTIVACION
 )
 
-from notifications import crear_ficha
+
+# --------------------------
+# Crear ficha para Angie
+# --------------------------
+
+def ficha(datos):
+
+    return f"""
+💙 NUEVA INTERESADA VOXURA
+
+👤 Nombre:
+{datos[2]}
+
+🎂 Edad:
+{datos[3]}
+
+🌎 País:
+{datos[4]}
+
+✨ Motivación:
+{datos[5]}
+
+📲 Telegram:
+@{datos[1] if datos[1] else "sin usuario"}
+"""
 
 
-TOKEN = os.getenv("BOT_TOKEN")
+# --------------------------
+# Inicio automático
+# --------------------------
 
-
-
-# ----------------------------
-# /start
-# ----------------------------
-
-async def start(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def iniciar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     usuario = update.effective_user
 
-
-    crear_usuario(
-        str(usuario.id),
+    crear_chica(
+        usuario.id,
         usuario.username
     )
 
-
-    actualizar_dato(
-        str(usuario.id),
-        "estado",
-        "nombre"
-    )
-
-
     await update.message.reply_text(
-        BIENVENIDA
+        BIENVENIDA,
+        reply_markup=ReplyKeyboardMarkup(
+            [
+                [
+                    KeyboardButton("✨ Quiero información")
+                ]
+            ],
+            resize_keyboard=True
+        )
     )
 
 
-    await update.message.reply_text(
-        PEDIR_NOMBRE
-    )
 
+# --------------------------
+# Manejo de mensajes
+# --------------------------
 
-
-# ----------------------------
-# Manejo de respuestas
-# ----------------------------
-
-async def recibir_mensaje(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     usuario = update.effective_user
-
-    telegram_id = str(usuario.id)
-
     texto = update.message.text
 
+    datos = obtener(usuario.id)
 
 
-    datos = obtener_usuario(
-        telegram_id
-    )
-
+    # Si es nueva persona
 
     if not datos:
 
-        crear_usuario(
-            telegram_id,
+        crear_chica(
+            usuario.id,
             usuario.username
         )
 
-        datos = obtener_usuario(
-            telegram_id
+        await update.message.reply_text(
+            BIENVENIDA,
+            reply_markup=ReplyKeyboardMarkup(
+                [
+                    [
+                        KeyboardButton(
+                            "✨ Quiero información"
+                        )
+                    ]
+                ],
+                resize_keyboard=True
+            )
         )
 
-
-
-    estado = datos[7]
+        return
 
 
 
-    # NOMBRE
+    paso = datos[6]
 
-    if estado == "nombre":
 
-        actualizar_dato(
-            telegram_id,
+
+    # Botón inicial
+
+    if texto == "✨ Quiero información":
+
+        actualizar(
+            usuario.id,
+            "paso",
+            "nombre"
+        )
+
+        await update.message.reply_text(
+            NOMBRE
+        )
+
+        return
+
+
+
+    # Nombre
+
+    if paso == "nombre":
+
+        actualizar(
+            usuario.id,
             "nombre",
             texto
         )
 
-
-        actualizar_dato(
-            telegram_id,
-            "estado",
+        actualizar(
+            usuario.id,
+            "paso",
             "edad"
         )
 
-
         await update.message.reply_text(
-            PEDIR_EDAD
+            EDAD
         )
 
+        return
 
-    # EDAD
 
-    elif estado == "edad":
 
-        actualizar_dato(
-            telegram_id,
+    # Edad
+
+    if paso == "edad":
+
+        actualizar(
+            usuario.id,
             "edad",
             texto
         )
 
-
-        actualizar_dato(
-            telegram_id,
-            "estado",
-            "ubicacion"
+        actualizar(
+            usuario.id,
+            "paso",
+            "pais"
         )
-
 
         await update.message.reply_text(
-            PEDIR_UBICACION
+            PAIS
         )
 
+        return
 
 
-    # UBICACION
 
-    elif estado == "ubicacion":
+    # País
 
-        actualizar_dato(
-            telegram_id,
-            "ubicacion",
+    if paso == "pais":
+
+        actualizar(
+            usuario.id,
+            "pais",
             texto
         )
 
-
-        actualizar_dato(
-            telegram_id,
-            "estado",
+        actualizar(
+            usuario.id,
+            "paso",
             "motivacion"
         )
 
-
         await update.message.reply_text(
-            PEDIR_MOTIVACION
+            MOTIVACION
         )
 
+        return
 
 
-    # MOTIVACION
 
-    elif estado == "motivacion":
+    # Motivación
 
-        actualizar_dato(
-            telegram_id,
+    if paso == "motivacion":
+
+        actualizar(
+            usuario.id,
             "motivacion",
             texto
         )
 
-
-        actualizar_dato(
-            telegram_id,
-            "estado",
-            "completado"
+        actualizar(
+            usuario.id,
+            "paso",
+            "completo"
         )
 
 
-        datos = obtener_usuario(
-            telegram_id
-        )
+        datos = obtener(usuario.id)
 
 
-        ficha = crear_ficha(
-            datos[4],
-            datos[5],
-            datos[6],
-            datos[7],
-            usuario.username
-        )
-
-
-        # ENVIAR FICHA A ANGIE
+        # Enviar ficha a Angie
 
         await context.bot.send_message(
             chat_id=ANGIE_ID,
-            text=ficha
+            text=ficha(datos)
         )
 
 
-
-        botones = [
+        botones = ReplyKeyboardMarkup(
             [
-                KeyboardButton(
-                    "👑 Hablar con Angie"
-                )
+                [
+                    KeyboardButton(
+                        "👑 Hablar con Angie"
+                    )
+                ],
+                [
+                    KeyboardButton(
+                        "📚 Capacitación"
+                    )
+                ],
+                [
+                    KeyboardButton(
+                        "💙 Comunidad"
+                    )
+                ]
             ],
-            [
-                KeyboardButton(
-                    "📚 Capacitación"
-                )
-            ],
-            [
-                KeyboardButton(
-                    "💙 Comunidad"
-                )
-            ]
-        ]
-
-
-        teclado = ReplyKeyboardMarkup(
-            botones,
             resize_keyboard=True
         )
 
 
         await update.message.reply_text(
-
             f"""
-Gracias por compartir conmigo, {datos[4]} 💙✨
+Gracias por compartir conmigo, {datos[2]} 💙✨
 
 Ya envié tu información a Angie, nuestra líder de Voxura.
 
-Mientras ella se comunica contigo puedes conocer más sobre nuestra comunidad y capacitación.
+Mientras ella se comunica contigo puedes conocer más sobre nuestra comunidad.
 
 Tu voz, tu esencia, tu oportunidad 💙
-
 """,
-
-            reply_markup=teclado
-
+            reply_markup=botones
         )
 
+        return
 
 
-# ----------------------------
-# Botones
-# ----------------------------
 
-async def botones(
-
-    update: Update,
-
-    context: ContextTypes.DEFAULT_TYPE
-
-):
-
-    texto = update.message.text
-
-
+    # Botones finales
 
     if texto == "👑 Hablar con Angie":
 
         await update.message.reply_text(
-
             f"""
 Puedes escribirle directamente a Angie 💙
 
 Telegram:
 {ANGIE_USERNAME}
-
-Ella estará feliz de orientarte personalmente ✨
-
 """
-
         )
-
 
 
     elif texto == "📚 Capacitación":
 
         await update.message.reply_text(
-
-            f"""
-Aquí puedes entrar a nuestra capacitación inicial 💙
-
-{CANAL_CAPACITACION}
-
-"""
-
+            CANAL_CAPACITACION
         )
-
 
 
     elif texto == "💙 Comunidad":
 
         await update.message.reply_text(
-
-            f"""
-Este es nuestro espacio de convivencia Voxura 💙
-
-{CANAL_CONVIVENCIA}
-
-"""
-
+            CANAL_CONVIVENCIA
         )
 
 
 
-# ----------------------------
-# Ejecutar bot
-# ----------------------------
+# --------------------------
+# Ejecutar
+# --------------------------
 
 def main():
 
@@ -345,11 +327,10 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
 
-
     app.add_handler(
         CommandHandler(
             "start",
-            start
+            iniciar
         )
     )
 
@@ -357,23 +338,12 @@ def main():
     app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
-            botones
+            mensajes
         )
     )
 
 
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            recibir_mensaje
-        )
-    )
-
-
-
-    print(
-        "Aura Voxura activa 💙"
-    )
+    print("Aura Voxura funcionando 💙")
 
 
     app.run_polling()
@@ -381,5 +351,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
