@@ -1,142 +1,108 @@
 import sqlite3
 
-
-DATABASE = "voxura.db"
+DB = "voxura.db"
 
 
 def conectar():
-    return sqlite3.connect(DATABASE)
-
+    return sqlite3.connect(DB)
 
 
 def crear_tabla():
 
-    conexion = conectar()
-    cursor = conexion.cursor()
+    con = conectar()
+    cur = con.cursor()
 
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS interesadas (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        telegram_id TEXT UNIQUE,
-
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chicas(
+        id INTEGER PRIMARY KEY,
         username TEXT,
-
         nombre TEXT,
-
         edad TEXT,
-
-        ubicacion TEXT,
-
+        pais TEXT,
         motivacion TEXT,
-
-        estado TEXT DEFAULT 'en_proceso',
-
-        fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-
+        paso TEXT
     )
     """)
 
-
-    conexion.commit()
-    conexion.close()
-
+    con.commit()
+    con.close()
 
 
-def crear_usuario(
-    telegram_id,
-    username
-):
 
-    conexion = conectar()
-    cursor = conexion.cursor()
+def crear_chica(user_id, username):
 
+    con = conectar()
+    cur = con.cursor()
 
-    cursor.execute("""
-    INSERT OR IGNORE INTO interesadas
-    (
-        telegram_id,
-        username
-    )
-
-    VALUES (?, ?)
-
+    cur.execute("""
+    INSERT OR IGNORE INTO chicas
+    (id, username, paso)
+    VALUES (?, ?, ?)
     """,
     (
-        telegram_id,
-        username
+        user_id,
+        username,
+        "nombre"
     ))
 
-
-    conexion.commit()
-    conexion.close()
-
+    con.commit()
+    con.close()
 
 
-def actualizar_dato(
-    telegram_id,
-    campo,
-    valor
-):
 
-    conexion = conectar()
-    cursor = conexion.cursor()
+def actualizar(user_id, campo, valor):
 
+    con = conectar()
+    cur = con.cursor()
 
-    campos_permitidos = [
-        "nombre",
-        "edad",
-        "ubicacion",
-        "motivacion",
-        "estado"
-    ]
-
-
-    if campo not in campos_permitidos:
-        return
-
-
-    cursor.execute(
+    cur.execute(
         f"""
-        UPDATE interesadas
+        UPDATE chicas
         SET {campo}=?
-        WHERE telegram_id=?
+        WHERE id=?
         """,
         (
             valor,
-            telegram_id
+            user_id
         )
     )
 
-
-    conexion.commit()
-    conexion.close()
-
+    con.commit()
+    con.close()
 
 
-def obtener_usuario(
-    telegram_id
-):
 
-    conexion = conectar()
-    cursor = conexion.cursor()
+def obtener(user_id):
 
+    con = conectar()
+    cur = con.cursor()
 
-    cursor.execute(
+    cur.execute(
         """
         SELECT *
-        FROM interesadas
-        WHERE telegram_id=?
+        FROM chicas
+        WHERE id=?
         """,
-        (telegram_id,)
+        (user_id,)
     )
 
+    data = cur.fetchone()
 
-    usuario = cursor.fetchone()
+    con.close()
 
-    conexion.close()
+    return data
 
 
-    return usuario
+
+def borrar(user_id):
+
+    con = conectar()
+    cur = con.cursor()
+
+    cur.execute(
+        "DELETE FROM chicas WHERE id=?",
+        (user_id,)
+    )
+
+    con.commit()
+    con.close()
