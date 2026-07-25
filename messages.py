@@ -1,51 +1,37 @@
 BIENVENIDA = """
-
-Hola hermosa 💙 soy Aura,
-la asistente virtual de Voxura ✨
-
+Hola linda 💙✨ soy Aura, la asistente virtual de Voxura.
 
 Me alegra mucho que estés aquí.
 
-Estoy para ayudarte a conocer nuestra agencia
-y orientarte sobre esta oportunidad dentro de BuzzCast.
+Estoy para ayudarte a conocer nuestra agencia y cómo puedes formar parte de nuestra comunidad.
 
-
-Antes de contarte más, quiero conocerte un poquito 💙
-
+¿Te gustaría conocer más información?
 """
 
 
-PEDIR_NOMBRE = """
-
-Qué lindo conocerte 💙
+NOMBRE = """
+Perfecto 💙
 
 ¿Cuál es tu nombre?
-
 """
 
 
-PEDIR_EDAD = """
-
-Perfecto ✨
+EDAD = """
+Mucho gusto ✨
 
 ¿Cuántos años tienes?
-
 """
 
 
-PEDIR_UBICACION = """
-
+PAIS = """
 Gracias por contarme 💙
 
 ¿De qué ciudad o país eres?
-
 """
 
 
-PEDIR_MOTIVACION = """
-
+MOTIVACION = """
 Y cuéntame algo importante ✨
 
 ¿Qué te gustaría conseguir formando parte de Voxura?
-
 """
