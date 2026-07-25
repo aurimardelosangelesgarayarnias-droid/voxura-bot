@@ -1,51 +1,43 @@
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes
+)
+
 import os
+
+from config import (
+    CANAL_CAPACITACION,
+    CANAL_CONVIVENCIA,
+    ANGIE_USERNAME,
+    ANGIE_ID
+)
+
+from database import (
+    crear_tabla,
+    guardar_interesada
+)
+
+from messages import (
+    BIENVENIDA,
+    PEDIR_NOMBRE,
+    PEDIR_EDAD,
+    PEDIR_UBICACION,
+    PEDIR_MOTIVACION
+)
+
+from notifications import crear_ficha
+
 
 TOKEN = os.getenv("BOT_TOKEN")
 
-menu = ReplyKeyboardMarkup(
-    [
-        ["💜 Información"],
-        ["💰 Ganancias"],
-        ["📝 Registro"],
-        ["👩‍💼 Contacto"]
-    ],
-    resize_keyboard=True
-)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "💜 Bienvenida a VOXURA 🪼\n\nSelecciona una opción:",
-        reply_markup=menu
-    )
+# Memoria temporal de usuarios
+usuarios = {}
 
-async def mensajes(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text
 
-    if texto == "💜 Información":
-        await update.message.reply_text(
-            "VOXURA es una agencia que acompaña a streamers durante su crecimiento."
-        )
 
-    elif texto == "💰 Ganancias":
-        await update.message.reply_text(
-            "Las ganancias dependen de tu actividad y desempeño."
-        )
-
-    elif texto == "📝 Registro":
-        await update.message.reply_text(
-            "Por favor envía:\n\nNombre\nEdad\nPaís"
-        )
-
-    elif texto == "👩‍💼 Contacto":
-        await update.message.reply_text(
-            "Próximamente."
-        )
-
-app = Application.builder().token(TOKEN).build()
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT, mensajes))
-
-app.run_polling()
+async def start(
